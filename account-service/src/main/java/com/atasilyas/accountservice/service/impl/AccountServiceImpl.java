@@ -1,17 +1,25 @@
 package com.atasilyas.accountservice.service.impl;
 
+import com.atasilyas.accountservice.controller.request.PageRequest;
 import com.atasilyas.accountservice.domain.Account;
 import com.atasilyas.accountservice.repository.AccountRepository;
 import com.atasilyas.accountservice.service.AccountService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.cassandra.core.query.CassandraPageRequest;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
+
+    private static final String SORT_FIELD = "username";
+    private static final String DEFAULT_CURSOR_MARK = "-1";
+
 
     @Override
     public Account get(String id) {
@@ -24,8 +32,8 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Account update(String id , Account account) {
-        Account oldAccount = accountRepository.findById(id)
+    public Account update(Account account) {
+        Account oldAccount = accountRepository.findById(account.getId())
                 .orElseThrow(() -> new RuntimeException("Kayıt Bulunamadı."));
         oldAccount.setEmail(account.getEmail());
         oldAccount.setIsActive(account.getIsActive());
@@ -42,5 +50,16 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public Account pagination() {
         return null;
+    }
+
+    @Override
+    public List<Account> findAll() {
+        return accountRepository.findAll();
+    }
+
+    @Override
+    public Slice<Account> findByPageable(PageRequest pageRequest) {
+        Pageable pageable = CassandraPageRequest.of(pageRequest.getPage(), pageRequest.getSize());
+        return accountRepository.findAll(pageable);
     }
 }
